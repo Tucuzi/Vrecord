@@ -1,0 +1,19 @@
+编译代码后，生产两个可执行文件：
+vrmanager vrecord 
+其中：
+vrecord 负责单路视频采集压缩和保存
+vrmanager 解析配置文件，初始化运行环境和执行vrecord的程序。监控SD使用空间状态，可用空间低于阀值时清除旧的视频文件。
+
+配置文件vrecord.conf说明：
+可配置4个参数
+channel_num -- 摄像头数目
+save_path -- 视频保存的根目录
+video_duration -- 单个视频文件录制时长，单位：秒
+video_num -- 单路视频保存多少文件。-1为不限，循环保持。
+
+安装：
+把 vrecord vrmanger放到目标板的根文件系统中的/usr/bin目录，把vrecord.conf放到/etc目录。
+
+使用：后台运行vrmanager
+#vrmanager&
+
