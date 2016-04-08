@@ -10,7 +10,8 @@
 #include <sys/wait.h>
 
 #include "vrecord.hpp"
-#include "parse.hpp"
+#include "parse.h"
+#include "utils.h"
 
 #define CMD "/usr/bin/vrecord"
 int vrecord_dbg_level = 0;

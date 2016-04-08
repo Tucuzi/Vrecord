@@ -21,7 +21,11 @@
 #include <uapi/linux/ipu.h>
 
 #include "vrecord.hpp"
-#include "parse.hpp"
+#include "parse.h"
+#include "utils.h"
+#include "mp4mux.h"
+#include "vencode.hpp"
+#include "capture.h"
 //#include "muxmkv.h"
 
 int vrecord_dbg_level = 0;

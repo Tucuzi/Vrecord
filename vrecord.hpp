@@ -319,45 +319,4 @@ struct video_record
     int (*saveframe)(struct video_record *vrecord, char *buf, int n, int syncframe);
 };
 
-int fwriten(int fd, void *vptr, size_t n);
-int freadn(int fd, void *vptr, size_t n);
-int vpu_read(struct vc_config *config, char *buf, int n);
-int vpu_write(struct vc_config *config, char *buf, int n);
-void get_arg(char *buf, int *argc, char *argv[]);
-int open_files(struct vc_config *config);
-void close_files(struct vc_config *config);
-int check_params(struct vc_config *config, int op);
-char*skip_unwanted(char *ptr);
-int parse_options(char *buf, struct vc_config *config, int *mode);
-int check_and_make_workdir(char * workdir);
-int check_and_make_subdir(char * workdir, char *subdir_prefix, int channel);
-char *get_the_filename(char *parent_dir);
-
-struct frame_buf *framebuf_alloc(struct frame_buf *fb, int stdMode, int format
-, int strideY, int height, int mvCol);
-int tiled_framebuf_base(FrameBuffer *fb, Uint32 frame_base, int strideY, int 
-height, int mapType);
-struct frame_buf *tiled_framebuf_alloc(struct frame_buf *fb, int stdMode, int 
-format, int strideY, int height, int mvCol, int mapType);
-void framebuf_free(struct frame_buf *fb);
-
-int v4l_start_capturing(struct video_record *vrecord);
-void v4l_stop_capturing(struct video_record *vrecord);
-int v4l_capture_setup(struct video_record *vrecord);
-int v4l_get_capture_data(struct video_record *vrecord, u8 *dbuf);
-void v4l_put_capture_data(struct video_record *vrecord);
-void v4l_close(struct video_record *vrecord);
-
-/* encode operation*/
-int encoder_open(struct encode *enc);
-void encoder_close(struct encode *enc);
-int encoder_configure(struct encode *enc);
-int encoder_setup(struct encode *enc);
-int encoder_start(struct encode *enc);
-int encoder_allocate_framebuffer(struct encode *enc);
-void encoder_free_framebuffer(struct encode *enc);
-
-int mp4mux_init(struct video_record *vrecord, char * vfile_name);
-int mp4_save_frame(struct video_record *vrecord, char *buf, int n, int syncframe);
-
 #endif
