@@ -70,7 +70,7 @@ static unsigned int fmt_to_bpp(unsigned int pixelformat)
         case IPU_PIX_FMT_YVU420P:
         case IPU_PIX_FMT_YUV420P2:
         case IPU_PIX_FMT_NV12:
-		case IPU_PIX_FMT_TILED_NV12:
+        case IPU_PIX_FMT_TILED_NV12:
             bpp = 12;
             break;
         default:
@@ -83,23 +83,23 @@ static unsigned int fmt_to_bpp(unsigned int pixelformat)
 
 void config_ipu_task(struct ipu_task *task)
 {
-	task->timeout = 1000;
-	//config the inout video data
+    task->timeout = 1000;
+    //config the inout video data
     task->input.width = PWIDTH;
-	task->input.height = PHIGH;
-	task->input.format =  IPU_PIX_FMT_RGB565;
+    task->input.height = PHIGH;
+    task->input.format =  IPU_PIX_FMT_RGB565;
     
     //config the output video data
     task->output.width = PWIDTH;
-	task->output.height = PHIGH;
-	task->output.format = IPU_PIX_FMT_YUV420P;
+    task->output.height = PHIGH;
+    task->output.format = IPU_PIX_FMT_YUV420P;
 }
 
 static int convert_save_frame(struct video_record *vrecord)
 {
-	int ret;
+    int ret;
 
-    ret = v4l_get_capture_data(vrecord, vrecord->idev.inbuf);
+    ret = v4l_get_capture_data(vrecord, (u8*)vrecord->idev.inbuf);
     //write(debug_fd, vrecord->idev.inbuf, ret);
     #if 0
     ret = ioctl(vrecord->idev.ifd, IPU_QUEUE_TASK, vrecord->idev.t);
@@ -107,13 +107,13 @@ static int convert_save_frame(struct video_record *vrecord)
         err_msg("ioct IPU_QUEUE_TASK fail\n");
     }
     else {
-		vrecord->enc.yuv_buff = vrecord->idev.outbuf;
-		encoder_start(&vrecord->enc);
+        vrecord->enc.yuv_buff = vrecord->idev.outbuf;
+        encoder_start(&vrecord->enc);
         //write(debug_fd, vrecord->idev.outbuf,  PWIDTH * PHIGH * 3 / 2); 
     }
     #else
         vrecord->enc.yuv_buff = vrecord->idev.inbuf;
-		encoder_start(&vrecord->enc);
+        encoder_start(&vrecord->enc);
     #endif
     
     return ret;
@@ -126,7 +126,7 @@ void config_init(int argc,char ** argv, struct vc_config * config)
     config->width = PWIDTH;
     config->height = PHIGH;
     config->enc_width = PWIDTH;
-    config->enc_height = PHIGH;	
+    config->enc_height = PHIGH;    
     config->format = 2;//h.264
     config->chromaInterleave = 0;
     config->quantParam = 20;
@@ -144,19 +144,20 @@ void * record_thread(void *pt)
 {
     char cnt;
     char *vfile_name;
-	char vfile_path[256];
+    char vfile_path[256];
     unsigned int i, ret, isize, osize;
-    vpu_mem_desc	mem_desc = {0};
+    vpu_mem_desc    mem_desc = {0};
     vpu_mem_desc scratch_mem_desc = {0};
     struct video_record *Vrecord;
     struct record_obj *obj = (struct record_obj *)pt;
 
     Vrecord = (struct video_record *)calloc(1, sizeof(struct video_record));
-   	if (Vrecord == NULL) {
-		err_msg("Failed to allocate video_record structure\n");
-		ret = VR_ALLOC_ERR;
-		return ret;
-	}
+       if (Vrecord == NULL) {
+        err_msg("Failed to allocate video_record structure\n");
+        ret = VR_ALLOC_ERR;
+        //return ret;
+        return NULL;
+    }
 
     Vrecord->saveframe = mp4_save_frame;
     Vrecord->config = obj->config;
@@ -174,7 +175,7 @@ void * record_thread(void *pt)
     sprintf(vfile_path, "%s/%s%d", WORK_DIR, SUBDIR, obj->channel);
 
     ret = chdir(vfile_path);
-	if (ret)
+    if (ret)
         return ret;
 
     vfile_name = get_the_filename(vfile_path);
@@ -185,51 +186,53 @@ void * record_thread(void *pt)
     
     if (mobject == NULL) {
         err_msg("MKVInit fail\n");
-	    return -1;
-	}
-	#endif
+        return -1;
+    }
+    #endif
 
     Vrecord->idev.ifd = open(IMG_DEVICE, O_RDWR, 0);
     if (Vrecord->idev.ifd < 0)  {
         perror("Open ipu device fail!");
-	    return VR_OPENIPU_ERR;
-	}
+        return NULL;
+        //return VR_OPENIPU_ERR;
+    }
 
     /* setting the vpu device */
     ret = vpu_Init(NULL);
-	if (ret) {
-		err_msg("VPU Init Failure.\n");
-		return VR_INITIPU_ERR;
-	}
+    if (ret) {
+        err_msg("VPU Init Failure.\n");
+        return NULL;
+        //return VR_INITIPU_ERR;
+    }
 
     #if 0
-	err = vpu_GetVersionInfo(&ver);
-	if (err) {
-		err_msg("Cannot get version info, err:%d\n", err);
-		vpu_UnInit();
-		return -1;
-	}
+    err = vpu_GetVersionInfo(&ver);
+    if (err) {
+        err_msg("Cannot get version info, err:%d\n", err);
+        vpu_UnInit();
+        return -1;
+    }
 
-	info_msg("VPU firmware version: %d.%d.%d_r%d\n", ver.fw_major, ver.fw_minor,
-						ver.fw_release, ver.fw_code);
-	info_msg("VPU library version: %d.%d.%d\n", ver.lib_major, ver.lib_minor,
-						ver.lib_release);
-	#endif
+    info_msg("VPU firmware version: %d.%d.%d_r%d\n", ver.fw_major, ver.fw_minor,
+                        ver.fw_release, ver.fw_code);
+    info_msg("VPU library version: %d.%d.%d\n", ver.lib_major, ver.lib_minor,
+                        ver.lib_release);
+    #endif
 
     /* get physical contigous bit stream buffer */
-	mem_desc.size = STREAM_BUF_SIZE;
-	ret = IOGetPhyMem(&mem_desc);
-	if (ret) {
-		err_msg("Unable to obtain physical memory\n");
-		goto err;
-	}
+    mem_desc.size = STREAM_BUF_SIZE;
+    ret = IOGetPhyMem(&mem_desc);
+    if (ret) {
+        err_msg("Unable to obtain physical memory\n");
+        goto err;
+    }
 
     /* mmap that physical buffer */
-	if (IOGetVirtMem(&mem_desc) == -1) {
-		err_msg("Unable to map physical memory\n");
-		ret = -1;
-		goto err;
-	}
+    if (IOGetVirtMem(&mem_desc) == -1) {
+        err_msg("Unable to map physical memory\n");
+        ret = -1;
+        goto err;
+    }
 
     Vrecord->enc.mjpg_fmt = MODE422;
     Vrecord->enc.phy_bsbuf_addr = mem_desc.phy_addr;
@@ -243,7 +246,7 @@ void * record_thread(void *pt)
             err_msg("MJPG encoder cannot support tiled format\n");
             ret = -1;
             goto err;
-		}
+        }
     } else
         Vrecord->enc.linear2TiledEnable = 0;
 
@@ -253,32 +256,32 @@ void * record_thread(void *pt)
     if (ret)
         goto err;
 
-	/* configure the encoder */
-	ret = encoder_configure(&Vrecord->enc);
-	if (ret)
-		goto err1;
+    /* configure the encoder */
+    ret = encoder_configure(&Vrecord->enc);
+    if (ret)
+        goto err1;
 
     /* allocate memory for the frame buffers */
-	ret = encoder_allocate_framebuffer(&Vrecord->enc);
-	if (ret)
-		goto err1;
+    ret = encoder_allocate_framebuffer(&Vrecord->enc);
+    if (ret)
+        goto err1;
 
-	//encoder_setup(&Vrecord->enc);
+    //encoder_setup(&Vrecord->enc);
 #endif
 
     /* setting the IPU device */
-	Vrecord->idev.t =  (struct ipu_task*) malloc(sizeof(struct ipu_task));
+    Vrecord->idev.t =  (struct ipu_task*) malloc(sizeof(struct ipu_task));
     memset(Vrecord->idev.t, 0, sizeof(struct ipu_task));
     config_ipu_task(Vrecord->idev.t);
     isize = Vrecord->idev.t->input.paddr =
-			Vrecord->idev.t->input.width * Vrecord->idev.t->input.height
-			* fmt_to_bpp(Vrecord->idev.t->input.format)/8;
-	
-	ret = ioctl(Vrecord->idev.ifd, IPU_ALLOC, &Vrecord->idev.t->input.paddr);
+            Vrecord->idev.t->input.width * Vrecord->idev.t->input.height
+            * fmt_to_bpp(Vrecord->idev.t->input.format)/8;
+    
+    ret = ioctl(Vrecord->idev.ifd, IPU_ALLOC, &Vrecord->idev.t->input.paddr);
     Vrecord->idev.inbuf = mmap(0, isize, PROT_READ | PROT_WRITE,
         MAP_SHARED, Vrecord->idev.ifd, Vrecord->idev.t->input.paddr);
 
-	osize = Vrecord->idev.t->output.paddr =
+    osize = Vrecord->idev.t->output.paddr =
         Vrecord->idev.t->output.width * Vrecord->idev.t->output.height
         * fmt_to_bpp(Vrecord->idev.t->output.format)/8;
     
@@ -288,30 +291,31 @@ void * record_thread(void *pt)
 
 again:
     ret = ioctl(Vrecord->idev.ifd, IPU_CHECK_TASK, Vrecord->idev.t);
-	if (ret != IPU_CHECK_OK) {
-		if (ret > IPU_CHECK_ERR_MIN) {
-			if (ret == IPU_CHECK_ERR_SPLIT_INPUTW_OVER) {
-				Vrecord->idev.t->input.crop.w -= 8;
-				goto again;
-			}
-			if (ret == IPU_CHECK_ERR_SPLIT_INPUTH_OVER) {
-				Vrecord->idev.t->input.crop.h -= 8;
-				goto again;
-			}
-			if (ret == IPU_CHECK_ERR_SPLIT_OUTPUTW_OVER) {
-				Vrecord->idev.t->output.crop.w -= 8;
-				goto again;
-			}
-			if (ret == IPU_CHECK_ERR_SPLIT_OUTPUTH_OVER) {
-				Vrecord->idev.t->output.crop.h -= 8;
-				goto again;
-			}
+    if (ret != IPU_CHECK_OK) {
+        if (ret > IPU_CHECK_ERR_MIN) {
+            if (ret == IPU_CHECK_ERR_SPLIT_INPUTW_OVER) {
+                Vrecord->idev.t->input.crop.w -= 8;
+                goto again;
+            }
+            if (ret == IPU_CHECK_ERR_SPLIT_INPUTH_OVER) {
+                Vrecord->idev.t->input.crop.h -= 8;
+                goto again;
+            }
+            if (ret == IPU_CHECK_ERR_SPLIT_OUTPUTW_OVER) {
+                Vrecord->idev.t->output.crop.w -= 8;
+                goto again;
+            }
+            if (ret == IPU_CHECK_ERR_SPLIT_OUTPUTH_OVER) {
+                Vrecord->idev.t->output.crop.h -= 8;
+                goto again;
+            }
 
-			ret = 0;
-			err_msg("ipu task check fail\n");
-			return -1;
-		}
-	}
+            ret = 0;
+            err_msg("ipu task check fail\n");
+            //return -1;
+            return NULL;
+        }
+    }
 
     /* setting the Camera device */
     v4l_capture_setup(Vrecord);
@@ -339,21 +343,21 @@ again:
             if (ret)
         goto err;
 
-	    /* configure the encoder */
-	    ret = encoder_configure(&Vrecord->enc);
-	    if (ret)
-		    goto err1;
+        /* configure the encoder */
+        ret = encoder_configure(&Vrecord->enc);
+        if (ret)
+            goto err1;
 
         /* allocate memory for the frame buffers */
-	    ret = encoder_allocate_framebuffer(&Vrecord->enc);
-	    if (ret)
-		    goto err1;
+        ret = encoder_allocate_framebuffer(&Vrecord->enc);
+        if (ret)
+            goto err1;
 
-	    encoder_setup(&Vrecord->enc);
+        encoder_setup(&Vrecord->enc);
         
 #if 0
         debug_fd = open(vfile_name, O_CREAT | O_RDWR | O_TRUNC,
-					S_IRWXU | S_IRWXG | S_IRWXO);
+                    S_IRWXU | S_IRWXG | S_IRWXO);
 #else
         mp4mux_init(Vrecord, vfile_name);
 #endif
@@ -370,9 +374,9 @@ again:
 #endif
 
         /* free the allocated framebuffers */
-	    encoder_free_framebuffer(&Vrecord->enc);
-	    /* close the encoder */
-	    encoder_close(&Vrecord->enc);
+        encoder_free_framebuffer(&Vrecord->enc);
+        /* close the encoder */
+        encoder_close(&Vrecord->enc);
     }
 
     //MKVEnd(mobject);
@@ -380,33 +384,33 @@ finish:
     v4l_stop_capturing(Vrecord);
     goto err;
 
-	/* free the allocated framebuffers */
-	encoder_free_framebuffer(&Vrecord->enc);
+    /* free the allocated framebuffers */
+    encoder_free_framebuffer(&Vrecord->enc);
 err1:
-	/* close the encoder */
-	encoder_close(&Vrecord->enc);
+    /* close the encoder */
+    encoder_close(&Vrecord->enc);
 err:
-	if (cpu_is_mx6x() && obj->config->format == STD_MPEG4 && &Vrecord->enc.mp4_dataPartitionEnable) {
-		IOFreeVirtMem(&scratch_mem_desc);
-		IOFreePhyMem(&scratch_mem_desc);
-	}
+    if (cpu_is_mx6x() && obj->config->format == STD_MPEG4 && &Vrecord->enc.mp4_dataPartitionEnable) {
+        IOFreeVirtMem(&scratch_mem_desc);
+        IOFreePhyMem(&scratch_mem_desc);
+    }
 
-	/* free the physical memory */
-	IOFreeVirtMem(&mem_desc);
-	IOFreePhyMem(&mem_desc);
-	vpu_UnInit();
+    /* free the physical memory */
+    IOFreeVirtMem(&mem_desc);
+    IOFreePhyMem(&mem_desc);
+    vpu_UnInit();
 
-	if (Vrecord->idev.outbuf)
-		munmap(Vrecord->idev.outbuf, osize);
+    if (Vrecord->idev.outbuf)
+        munmap(Vrecord->idev.outbuf, osize);
 
     if (Vrecord->idev.t->output.paddr)
-		ioctl(Vrecord->idev.ifd, IPU_FREE, &Vrecord->idev.t->output.paddr);
+        ioctl(Vrecord->idev.ifd, IPU_FREE, &Vrecord->idev.t->output.paddr);
 
-	if (Vrecord->idev.inbuf)
-		munmap(Vrecord->idev.inbuf, isize);
+    if (Vrecord->idev.inbuf)
+        munmap(Vrecord->idev.inbuf, isize);
 
-	if (Vrecord->idev.t->input.paddr)
-		ioctl(Vrecord->idev.ifd, IPU_FREE, &Vrecord->idev.t->input.paddr);		
+    if (Vrecord->idev.t->input.paddr)
+        ioctl(Vrecord->idev.ifd, IPU_FREE, &Vrecord->idev.t->input.paddr);        
 
     close(Vrecord->idev.ifd);
     v4l_close(Vrecord);
@@ -421,7 +425,7 @@ int main(int argc,char ** argv)
     int channel;
     pthread_t tpid;
     pthread_attr_t pattr;
-	struct vc_config * vcconfig;
+    struct vc_config * vcconfig;
     struct record_obj obj;
     struct parmeter_list *list;
 
@@ -446,11 +450,11 @@ int main(int argc,char ** argv)
         info_msg("start recording the Camera%d\n", channel);
 
     vcconfig = (struct vc_config *)calloc(1, sizeof(struct vc_config));
-	if (vcconfig == NULL) {
-		err_msg("Failed to allocate vc_config structure\n");
-		ret = VR_ALLOC_ERR;
-		return ret;
-	}
+    if (vcconfig == NULL) {
+        err_msg("Failed to allocate vc_config structure\n");
+        ret = VR_ALLOC_ERR;
+        return ret;
+    }
 
     config_init(argc, argv, vcconfig);
     vcconfig->video_dru = atoi(search_parmeter_value(list, VIDEO_DURATION));

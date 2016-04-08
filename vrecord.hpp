@@ -70,14 +70,14 @@ typedef char s8;
 #define TRANSCODE	4
 
 /* ERROR CODE */
-#define VR_OK                0
-#define VR_ALLOC_ERR        -1
-#define VR_CHECKDIR_ERR     -2
-#define VR_CHDIR_ERR        -3
-#define VR_MP4INIT_ERR      -4
-#define VR_MP4TRACK_ERR     -5
-#define VR_OPENIPU_ERR      -6
-#define VR_INITIPU_ERR      -7
+#define VR_OK                (0)
+#define VR_ALLOC_ERR        (-1)
+#define VR_CHECKDIR_ERR     (-2)
+#define VR_CHDIR_ERR        (-3)
+#define VR_MP4INIT_ERR      (-4)
+#define VR_MP4TRACK_ERR     (-5)
+#define VR_OPENIPU_ERR      (-6)
+#define VR_INITIPU_ERR      (-7)
 
 
 #define DEFAULT_PORT		5555

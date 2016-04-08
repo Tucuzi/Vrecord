@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <dirent.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include <sys/vfs.h> 
 #include <sys/types.h>
@@ -76,7 +78,7 @@ void remove_oldvideo(char *path)
 }
 
 
-void monitor_thread(void *ptr)
+void* monitor_thread(void *ptr)
 {
     char video_dir[256];
     float freedisk_rate;
@@ -183,7 +185,7 @@ int main(int argc, char* argv[])
     threadRun = 1;
     //pthread_attr_init(&pattr);  
     //pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_JOINABLE); 
-    pthread_create(&tpid, NULL, monitor_thread, &config);
+    pthread_create(&tpid, NULL, monitor_thread, (void *)(&config));
 
     for(i=0;i<channel;i++) {
         cpid = waitpid(-1, NULL, 0);

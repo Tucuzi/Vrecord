@@ -89,7 +89,7 @@ int v4l_capture_setup(struct video_record *vrecord)
     if (req.count < BUFF_NUM)
         err_msg("Insufficient buffer memory\n");
 
-    vrecord->vdev.buffers = calloc(req.count, sizeof (*vrecord->vdev.buffers));
+    vrecord->vdev.buffers = (buffer*)calloc(req.count, sizeof (*vrecord->vdev.buffers));
 
     for (vrecord->vdev.n_buffers = 0; vrecord->vdev.n_buffers < req.count; vrecord->vdev.n_buffers++)
     {

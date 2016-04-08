@@ -1,11 +1,13 @@
 APP=vrecord
 APP2=vrmanager
 
-OBJECT= utils.o vencode.o vrecord.o mp4mux.o fb.o capture.o parse.o
+OBJECT= utils.o vrecord.o mp4mux.o fb.o capture.o parse.o
+COBJECT= vencode.o
 COMMON_OBJECT=parse.o utils.o
 OBJECT2=vrmanager.o 
 
-CFLAGS=-Wall -O3
+#CFLAGS=-Wall -O2
+CFLAGS=-O2
 HEADER=
 LDFLAGS=-lvpu -lmp4v2 -lpthread
 
@@ -15,8 +17,8 @@ CROSS_GCC=${CROSS_COMPILER}-gcc ${CROSS_OPTS}
 CROSS_GPP=${CROSS_COMPILER}-g++ ${CROSS_OPTS}
 
 .PHONY: all clean
-all: ${OBJECT} $(OBJECT2)
-	${CROSS_GPP} -o ${APP} ${LDFLAGS} ${OBJECT}
+all: ${OBJECT} ${OBJECT2} ${COBJECT}
+	${CROSS_GCC} -o ${APP} ${LDFLAGS} ${OBJECT} ${COBJECT}
 	${CROSS_GPP} -o ${APP2} ${OBJECT2} ${COMMON_OBJECT} -lpthread
 
 ${OBJECT}:%.o: %.cpp
@@ -24,6 +26,10 @@ ${OBJECT}:%.o: %.cpp
 
 ${OBJECT2}:%.o: %.cpp
 	${CROSS_GPP} ${CFLAGS} ${HEADER} -c $<
+
+${COBJECT}:%.o: %.c
+	${CROSS_GCC} ${CFLAGS} ${HEADER} -c $<
+
 
 clean:
 	-rm ${APP} ${OBJECT}
