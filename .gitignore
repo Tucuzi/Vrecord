@@ -1,0 +1,8 @@
+*.o
+vrecord
+vrmanager
+
+!.gitignore
+
+/tgas
+/TAGS
