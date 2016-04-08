@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <linux/videodev2.h>
-#include "vrecord.h"
+#include "vrecord.hpp"
 
 #define BUFF_NUM 8
 #define CLEAR(x) memset (&(x), 0, sizeof (x))

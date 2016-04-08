@@ -20,8 +20,8 @@
 //#include <lpu.h>
 #include <uapi/linux/ipu.h>
 
-#include "vrecord.h"
-#include "parse.h"
+#include "vrecord.hpp"
+#include "parse.hpp"
 //#include "muxmkv.h"
 
 int vrecord_dbg_level = 0;

@@ -7,11 +7,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "vrecord.hpp"
+#include "parse.hpp"
 
-#include "vrecord.h"
-#include "parse.h"
-
-#define CMD "/media/mmcblk2p1/vrecord"
+#define CMD "/usr/bin/vrecord"
 int vrecord_dbg_level = 0;
 int threadRun;
 
@@ -42,33 +41,48 @@ int customFilter(const struct dirent *pDir)
 #endif
 }
 
-int remove_oldvideo(char *path)
+void remove_oldvideo(char *path)
 {
     struct dirent **namelist;
-    char *path;
+    char * pwd;
     int n;
+    int dnum;
     int i;
 
+    pwd = get_current_dir_name();
     n = scandir(path, &namelist, customFilter, alphasort);
-    if (n < 0) {
+    if (n < 0)
         perror("scandir");
-    }
-    else {
-        for (i = 0; i < n; i++) {
+    else
+    {
+        chdir(path);
+        info_msg("%s saved %d video files.\n",path,n);
+        dnum = n>=5?4:0;
+        info_msg("==== delete below files ====\n");
+
+        /* delete the oldest video files */
+        for (i = 0; i < dnum; i++) {
             printf("%s\n", namelist[i]->d_name);
-            free(namelist[i]);
+            unlink(namelist[i]->d_name);
         }
+
+        for (i = 0; i < n; i++)
+            free(namelist[i]);
 
         free(namelist);
     }
+
+    chdir(pwd);
 }
 
-void * monitor_thread(void *ptr)
+
+void monitor_thread(void *ptr)
 {
     char video_dir[256];
+    float freedisk_rate;
+    int i;
     int ret;
     int sleep_duration;
-    float freedisk_rate;
     unsigned long long blocksize;
     unsigned long long totalsize;
     unsigned long long freedisk;
@@ -84,27 +98,30 @@ void * monitor_thread(void *ptr)
     chdir(config->path);
     while(threadRun) {
         sleep(sleep_duration);
-        //info_msg("Thread wake, check the disk\n");
         ret = statfs(config->path, &diskinfo);
         if (!ret) {
             blocksize = diskinfo.f_bsize;
             totalsize = blocksize * diskinfo.f_blocks;
-#if 1
+
             info_msg("Total_size = %llu B = %llu KB = %llu MB = %llu GB\n",   
                 totalsize, totalsize>>10, totalsize>>20, totalsize>>30);
-#endif
+
+            totalsize >>=20;
             freedisk = diskinfo.f_bfree * blocksize;
             availabledisk = diskinfo.f_bavail * blocksize;
-#if 1
             info_msg("Disk_free = %llu MB = %llu GB\nDisk_available = %llu MB = %llu GB\n"
                , freedisk>>20, freedisk>>30, availabledisk>>20, availabledisk>>30);  
-#endif
 
-            freedisk_rate = availabledisk / totalsize;
+            availabledisk >>= 20;
+            freedisk_rate = (float)availabledisk / (float)totalsize;
             info_msg("The free disk rate is %f\n", freedisk_rate);
-            for(i=0; i<config->channel; i++) {
-                sprintf(video_dir,"%s/%s%d", config->path, SUBDIR, i);
-                remove_oldvideo(video_dir);
+            
+            //If the free disk is lower than 15%, remove the older files
+            if (freedisk_rate < 0.15) {
+                for(i=0; i<config->channel; i++) {
+                    sprintf(video_dir,"%s/%s%d", config->path, SUBDIR, i);
+                    remove_oldvideo(video_dir);
+                }
             }
         }
 
@@ -124,7 +141,7 @@ int main(int argc, char* argv[])
     pid_t *ppid;
     pid_t cpid;
     pthread_t tpid;
-    pthread_attr_t pattr;
+    //pthread_attr_t pattr;
     char args[20];
     char* path;
 
@@ -166,11 +183,11 @@ int main(int argc, char* argv[])
     threadRun = 1;
     //pthread_attr_init(&pattr);  
     //pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_JOINABLE); 
-    pthread_create(&tpid, NULL, monitor_thread, (void*)&config);
+    pthread_create(&tpid, NULL, monitor_thread, &config);
 
     for(i=0;i<channel;i++) {
         cpid = waitpid(-1, NULL, 0);
-        info_msg("Video record process %d exit!\n", cpid);
+        info_msg("child process %d exit!\n", cpid);
     }
 
     sync();

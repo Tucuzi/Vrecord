@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "vrecord.h"
-#include "vpu_jpegtable.h"
+#include "vrecord.hpp"
+#include "vpu_jpegtable.hpp"
 
 /* V4L2 capture buffers are obtained from here */
 extern struct capture_testbuffer cap_buffers[];
@@ -67,9 +67,10 @@ void jpgGetCInfoTable(EncMjpgParam *param)
 static int
 enc_readbs_reset_buffer(struct encode *enc, PhysicalAddress paBsBufAddr, int bsBufsize)
 {
-	u32 vbuf;
+    u32 vbuf;
     struct video_record *vrecord = (struct video_record *)enc->vptr;
-	vbuf = enc->virt_bsbuf_addr + paBsBufAddr - enc->phy_bsbuf_addr;
+    
+    vbuf = enc->virt_bsbuf_addr + paBsBufAddr - enc->phy_bsbuf_addr;
 
     return vrecord->saveframe(vrecord, (void *)vbuf, bsBufsize, issyncframe);
 	//return vpu_write(enc->config, (void *)vbuf, bsBufsize);

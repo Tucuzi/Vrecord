@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
-#include "vrecord.h"
+#include "vrecord.hpp"
 #include <mp4v2/mp4v2.h>
 
 //extern struct video_record *Vrecord;
@@ -33,7 +33,7 @@ fwriten(int fd, void *vptr, size_t n)
 	int nwrite;
 	char  *ptr;
 
-	ptr = vptr;
+	ptr = (char *)vptr;
 	nleft = n;
 	while (nleft > 0) {
 		if ( (nwrite = write(fd, ptr, nleft)) <= 0) {
@@ -55,7 +55,7 @@ freadn(int fd, void *vptr, size_t n)
 	int nread = 0;
 	char  *ptr;
 
-	ptr = vptr;
+	ptr = (char *)vptr;
 	nleft = n;
 	while (nleft > 0) {
 		if ( (nread = read(fd, ptr, nleft)) <= 0) {

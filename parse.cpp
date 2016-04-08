@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parse.h"
+#include "parse.hpp"
 
 #define COMMENT_SIGN '#'
 #define EQ_SIGN '='

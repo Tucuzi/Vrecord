@@ -1,5 +1,5 @@
 #include <time.h>
-#include "vrecord.h"
+#include "vrecord.hpp"
 
 #define DEFAULT_STREAM_FPS  (25)
 #define TIMECODE_SCALE 1000000
