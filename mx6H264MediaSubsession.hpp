@@ -8,10 +8,10 @@
 class mx6H264MediaSubsession : public OnDemandServerMediaSubsession  
 {  
 public:  
-    static mx6H264MediaSubsession *createNew (UsageEnvironment &env, FramedSource *source);  
+    static mx6H264MediaSubsession *createNew (UsageEnvironment &env, FramedSource *source, void *ptr);  
 
 protected:  
-    mx6H264MediaSubsession (UsageEnvironment &env, FramedSource *source);
+    mx6H264MediaSubsession (UsageEnvironment &env, FramedSource *source, void* ptr);
     ~mx6H264MediaSubsession ();
       
 private:  
@@ -26,7 +26,8 @@ protected:
 
 private:  
     FramedSource *mp_source;    // \u5bf9\u5e94 WebcamFrameSource  
-    char *mp_sdp_line;  
+    char *mp_sdp_line;
+    void *mp_ptr;  
     RTPSink *mp_dummy_rtpsink;  
     char m_done;  
 };  

@@ -1,18 +1,22 @@
+#include "vrecord.hpp"
 #include "mx6H264Source.hpp"
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 
-mx6H264Source*
-mx6H264Source::createNew(UsageEnvironment& env) {
-    printf("mx6H264Source::%s\n",__func__);
-    return new mx6H264Source(env);
+#define FRAME_PER_SEC 25
+
+mx6H264Source* mx6H264Source::createNew(UsageEnvironment& env, void *ptr) {
+    //printf("mx6H264Source::%s\n",__func__);
+    return new mx6H264Source(env, ptr);
 }
 
 EventTriggerId mx6H264Source::eventTriggerId = 0;
 
 unsigned mx6H264Source::referenceCount = 0;
 
-mx6H264Source::mx6H264Source(UsageEnvironment& env)
-  : FramedSource(env) {
+mx6H264Source::mx6H264Source(UsageEnvironment& env, void *ptr)
+    : FramedSource(env) 
+{
+#if 0
   if (referenceCount == 0) {
     // Any global initialization of the device would be done here:
     //%%% TO BE WRITTEN %%%
@@ -34,12 +38,16 @@ mx6H264Source::mx6H264Source(UsageEnvironment& env)
   if (eventTriggerId == 0) {
     eventTriggerId = envir().taskScheduler().createEventTrigger(deliverFrame0);
   }
+#endif 
+    m_started = 0;  
+    mp_token = 0;
+    mp_ptr = ptr;
 }
 
 mx6H264Source::~mx6H264Source() {
   // Any instance-specific 'destruction' (i.e., resetting) of the device would be done here:
   //%%% TO BE WRITTEN %%%
-
+#if 0
   --referenceCount;
   if (referenceCount == 0) {
     // Any global 'destruction' (i.e., resetting) of the device would be done here:
@@ -49,9 +57,11 @@ mx6H264Source::~mx6H264Source() {
     envir().taskScheduler().deleteEventTrigger(eventTriggerId);
     eventTriggerId = 0;
   }
+#endif
 }
 
 void mx6H264Source::doGetNextFrame() {
+#if 0
   // This function is called (by our 'downstream' object) when it asks for new data.
 
   printf("%s\n",__func__);
@@ -68,7 +78,55 @@ void mx6H264Source::doGetNextFrame() {
 
   // No new data is immediately available to be delivered.  We don't do anything more here.
   // Instead, our event trigger must be called (e.g., from a separate thread) when new data becomes available.
+#endif
+    //--------------------------------------------------------------------------------------------------------------//
+   
+    if (m_started) return;  
+        m_started = 1;  
+  
+        // 根据 fps, 计算等待时间  
+    double delay = 1000.0 / FRAME_PER_SEC;  
+    int to_delay = delay * 1000;    // us  
+  
+    mp_token = envir().taskScheduler().scheduleDelayedTask(to_delay,  
+        getNextFrame, this);
+  
 }
+
+unsigned mx6H264Source::maxFrameSize() const
+{
+    return 500*1024;
+}
+
+void mx6H264Source::getNextFrame (void *ptr)  
+{  
+    ((mx6H264Source*)ptr)->getNextFrame1();  
+}  
+  
+void mx6H264Source::getNextFrame1 ()  
+{ 
+    char *outbuf;
+    struct video_record *vp;
+    
+    vp = (struct video_record *) mp_ptr;
+    outbuf = vp->enc.output_ptr;
+
+    gettimeofday(&fPresentationTime, 0);  
+    fFrameSize = vp->enc.outlen;  
+    if (fFrameSize > fMaxSize) {  
+        fNumTruncatedBytes = fFrameSize - fMaxSize;  
+        fFrameSize = fMaxSize;  
+    }  
+    else {  
+         fNumTruncatedBytes = 0;  
+    }  
+  
+    memmove(fTo, outbuf, fFrameSize);  
+  
+    // notify  
+    afterGetting(this);   
+    m_started = 0;  
+}  
 
 void mx6H264Source::deliverFrame0(void* clientData) {
   ((mx6H264Source*)clientData)->deliverFrame();

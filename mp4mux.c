@@ -55,26 +55,24 @@ int mp4_save_frame(struct video_record *vrecord, char *buf, int n, int syncframe
     #if 1
     if (n < 20) {
         #if 0
-		for (nalsize = 0; nalsize < n; nalsize++)
-		    printf("0x%x ", buf[nalsize]);
-		
-		printf("\n");
+        for (nalsize = 0; nalsize < n; nalsize++)
+            printf("0x%x ", buf[nalsize]);
+        
+        printf("\n");
         #endif
-	}
-	else
+    }
+    else
     #endif
     {
-		#if 1
         buf[0] = (nalsize & 0xff000000) >> 24;  
         buf[1] = (nalsize & 0x00ff0000) >> 16;  
         buf[2] = (nalsize & 0x0000ff00) >> 8;  
         buf[3] =  nalsize & 0x000000ff;  
-        #endif
-
-		MP4WriteSample(vrecord->mp4_mux.mp4file, 
-		    vrecord->mp4_mux.video_track, 
-		    (u8 *)buf, n, MP4_INVALID_DURATION, 0, syncframe);
-
+#if 0
+        MP4WriteSample(vrecord->mp4_mux.mp4file, 
+            vrecord->mp4_mux.video_track, 
+            (u8 *)buf, n, MP4_INVALID_DURATION, 0, syncframe);
+#endif
     }
 
     return n;

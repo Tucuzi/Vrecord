@@ -34,6 +34,7 @@
 
 int vrecord_dbg_level = 0;
 int debug_fd;
+//struct video_record *Vrecord = NULL;
 
 #define FRAME_NUM 10*25
 
@@ -153,9 +154,9 @@ void * record_thread(void *pt)
     unsigned int i, ret, isize, osize;
     vpu_mem_desc    mem_desc = {0};
     vpu_mem_desc scratch_mem_desc = {0};
-    struct video_record *Vrecord;
     struct record_obj *obj = (struct record_obj *)pt;
-
+    struct video_record *Vrecord = NULL;
+    
     Vrecord = (struct video_record *)calloc(1, sizeof(struct video_record));
        if (Vrecord == NULL) {
         err_msg("Failed to allocate video_record structure\n");
@@ -169,7 +170,7 @@ void * record_thread(void *pt)
     Vrecord->enc.config = obj->config;
     Vrecord->enc.vptr = Vrecord;
     Vrecord->vdev.channel = obj->channel;
-
+info_msg("bug trace\n");
 #if 0
     /* check the sub directory */
     ret = check_and_make_subdir(WORK_DIR, SUBDIR, obj->channel);
@@ -313,10 +314,12 @@ again:
         }
     }
 
+info_msg("bug trace2\n");
     /* setting the Camera device */
     v4l_capture_setup(Vrecord);
     v4l_start_capturing(Vrecord);
 
+info_msg("bug trace3\n");
     /* check the sub directory */
     ret = check_and_make_subdir(Vrecord->config->fpath, SUBDIR, obj->channel);
     if (ret)
@@ -330,6 +333,7 @@ again:
         goto finish;
 #endif
 
+info_msg("bug trace, video num is : %d\n",Vrecord->config->video_num);
     while(cnt++ < Vrecord->config->video_num || Vrecord->config->video_num == -1) {
         vfile_name = get_the_filename(vfile_path);
         info_msg("Create %s\n", vfile_name);
@@ -414,7 +418,7 @@ err:
     pthread_exit(NULL); 
 }
 
-
+#if 0
 void * livevideo_thread(void *pt)
 {
     char livename[32];
@@ -426,7 +430,7 @@ void * livevideo_thread(void *pt)
     TaskScheduler *scheduler = BasicTaskScheduler::createNew();
     
     env = BasicUsageEnvironment::createNew(*scheduler);
-    RTSPServer *rtspServer = RTSPServer::createNew(*env, 8554);
+    RTSPServer *rtspServer = RTSPServer::createNew(*env, 8554+obj->channel);
     if (!rtspServer) {
         fprintf(stderr, "ERR: create RTSPServer err\n");
         ::exit(-1);
@@ -435,10 +439,12 @@ void * livevideo_thread(void *pt)
     sprintf(livename, "camera%d", obj->channel);
     sprintf(comment, "Session from /dev/video%d", obj->channel);
    
+    //sleep(1);
+    info_msg("start rstp server\n");
     /* add live stream */ 
     do {
         ServerMediaSession *sms = ServerMediaSession::createNew(*env, livename, 0, comment);
-        sms->addSubsession(mx6H264MediaSubsession::createNew(*env, videoSource));
+        sms->addSubsession(mx6H264MediaSubsession::createNew(*env, videoSource, Vrecord));
         rtspServer->addServerMediaSession(sms);
 
         char *url = rtspServer->rtspURL(sms);
@@ -449,6 +455,7 @@ void * livevideo_thread(void *pt)
     // run loop  
     env->taskScheduler().doEventLoop();
 }
+#endif 
 
 int main(int argc,char ** argv)
 {
@@ -480,6 +487,13 @@ int main(int argc,char ** argv)
     }
     else
         info_msg("start recording the Camera%d\n", channel);
+ 
+#if 0  
+    if (channel == 0) {
+        printf("Skip the camer0, because it is not good.\n");
+        return EXIT_SUCCESS;
+    }
+#endif 
 
     vcconfig = (struct vc_config *)calloc(1, sizeof(struct vc_config));
     if (vcconfig == NULL) {
@@ -506,9 +520,11 @@ int main(int argc,char ** argv)
     pthread_attr_init(&pattr);  
     pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_JOINABLE); 
     pthread_create(&tpid, &pattr, record_thread, (void*)&obj);
-    pthread_create(&lpid, &pattr, livevideo_thread, (void*)&obj);
+    sleep(1);
+    //pthread_create(&lpid, &pattr, livevideo_thread, (void*)&obj);
 
     pthread_join(tpid,NULL);
+    //pthread_cancel(lpid);
 
     info_msg("Job finish\n");
     //sleep(1);

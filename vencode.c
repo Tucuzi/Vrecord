@@ -73,6 +73,8 @@ enc_readbs_reset_buffer(struct encode *enc, PhysicalAddress paBsBufAddr, int bsB
     struct video_record *vrecord = (struct video_record *)enc->vptr;
     
     vbuf = enc->virt_bsbuf_addr + paBsBufAddr - enc->phy_bsbuf_addr;
+    vrecord->enc.output_ptr = (char*)vbuf;
+    vrecord->enc.outlen = bsBufsize;
 
     return vrecord->saveframe(vrecord, (char *)vbuf, bsBufsize, issyncframe);
     //return vpu_write(enc->config, (void *)vbuf, bsBufsize);
