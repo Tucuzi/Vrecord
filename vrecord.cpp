@@ -105,7 +105,7 @@ static int convert_save_frame(struct video_record *vrecord)
 
     ret = v4l_get_capture_data(vrecord, (u8*)vrecord->idev.inbuf);
     //write(debug_fd, vrecord->idev.inbuf, ret);
-    #if 0
+    #if 1
     ret = ioctl(vrecord->idev.ifd, IPU_QUEUE_TASK, vrecord->idev.t);
     if (ret < 0) {
         err_msg("ioct IPU_QUEUE_TASK fail\n");
@@ -115,9 +115,6 @@ static int convert_save_frame(struct video_record *vrecord)
         encoder_start(&vrecord->enc);
         //write(debug_fd, vrecord->idev.outbuf,  PWIDTH * PHIGH * 3 / 2); 
     }
-    #else
-        vrecord->enc.yuv_buff = vrecord->idev.inbuf;
-        encoder_start(&vrecord->enc);
     #endif
     
     return ret;
@@ -146,7 +143,7 @@ void config_init(int argc,char ** argv, struct vc_config * config)
 
 void * record_thread(void *pt)
 {
-    char cnt;
+    int cnt=0;
     char *vfile_name;
     char vfile_path[256];
     unsigned int i, ret, isize, osize;
@@ -185,14 +182,6 @@ void * record_thread(void *pt)
     vfile_name = get_the_filename(vfile_path);
     mp4mux_init(Vrecord, vfile_name);
 #endif
-    #if 0
-    mobject = MKVInit( vfile_name );
-    
-    if (mobject == NULL) {
-        err_msg("MKVInit fail\n");
-        return -1;
-    }
-    #endif
 
     Vrecord->idev.ifd = open(IMG_DEVICE, O_RDWR, 0);
     if (Vrecord->idev.ifd < 0)  {
@@ -209,7 +198,7 @@ void * record_thread(void *pt)
         //return VR_INITIPU_ERR;
     }
 
-    #if 1
+    #if 0
     err = vpu_GetVersionInfo(&ver);
     if (err) {
         err_msg("Cannot get version info, err:%d\n", err);
@@ -238,7 +227,6 @@ void * record_thread(void *pt)
         goto err;
     }
 
-    Vrecord->enc.mjpg_fmt = MODE422;
     Vrecord->enc.phy_bsbuf_addr = mem_desc.phy_addr;
     Vrecord->enc.virt_bsbuf_addr = mem_desc.virt_uaddr;
     Vrecord->enc.yuv_buff = Vrecord->idev.outbuf; 
@@ -337,7 +325,7 @@ again:
     if (ret)
         goto finish;
 #endif
-    cnt = 0;
+
     while(cnt++ < Vrecord->config->video_num || Vrecord->config->video_num == -1) {
         vfile_name = get_the_filename(vfile_path);
         info_msg("Create %s\n", vfile_name);

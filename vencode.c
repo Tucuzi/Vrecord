@@ -473,11 +473,6 @@ err1:
 static int
 read_from_ram(struct encode *enc)
 {
-    int i,j;
-    char * yuv_buff;
-    char * ybuff;
-    char * ubuff;
-    char * vbuff;
     u32 y_addr, u_addr, v_addr;
     struct frame_buf *pfb = enc->pfbpool[enc->src_fbid];
     int divX, divY;
@@ -509,7 +504,6 @@ read_from_ram(struct encode *enc)
     u_addr = pfb->addrCr + pfb->desc.virt_uaddr - pfb->desc.phy_addr;
 #endif
 
-#if 0
     if (img_size == pfb->desc.size) {
         memcpy((void *)y_addr, (void *)enc->yuv_buff, img_size);
 
@@ -522,26 +516,6 @@ read_from_ram(struct encode *enc)
             memcpy((void *)u_addr, (void *)enc->yuv_buff + y_size, c_size * 2);
         }
     }
-#else
-    yuv_buff = (char*)enc->yuv_buff;
-    ybuff = (char *)y_addr;
-    ubuff = (char *)u_addr;
-    vbuff = (char *)v_addr;
-
-    for(i=0;i<img_size;i+4) {
-        for(j=0;j<img_size/2;j++) {
-            /* y */
-            ybuff[j*2] = (yuv_buff[i]&0xf0) | (yuv_buff[i+1]&0xf0)>>4;
-            ybuff[j*2+1] = (yuv_buff[i+2]&0xf0) | (yuv_buff[i+3]&0xf0)>>4;
-            /* u */
-            ubuff[j] = (yuv_buff[i]&0x0f)<<4 | (yuv_buff[i+2]&0x0f);
-            /* v */
-            vbuff[j] = (yuv_buff[i+1]&0x0f)<<4 | (yuv_buff[i+3]&0x0f);
-        }
-    }
-
-    info_msg("packed -> planner over\n");
-#endif
 
     return ret;
 }

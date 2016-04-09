@@ -67,7 +67,7 @@ int v4l_capture_setup(struct video_record *vrecord)
     fmt.type                  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     fmt.fmt.pix.width         = vrecord->config->width;
     fmt.fmt.pix.height        = vrecord->config->height;
-    fmt.fmt.pix.pixelformat   = V4L2_PIX_FMT_YUYV;//V4L2_PIX_FMT_RGB565; //V4L2_PIX_FMT_YUV420;//V4L2_PIX_FMT_UYVY;
+    fmt.fmt.pix.pixelformat   = V4L2_PIX_FMT_RGB565; //V4L2_PIX_FMT_YUV420;//V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field         = V4L2_FIELD_INTERLACED;
     if (ioctl(vrecord->vdev.vfd, VIDIOC_S_FMT, &fmt) < 0) {
         err_msg("VIDIOC_S_FMT erro\n");
