@@ -19,6 +19,9 @@
 #include <linux/videodev2.h>
 //#include <lpu.h>
 #include <uapi/linux/ipu.h>
+#include <liveMedia.hh>
+#include <BasicUsageEnvironment.hh>
+#include <GroupsockHelper.hh>
 
 #include "vrecord.hpp"
 #include "parse.h"
@@ -26,7 +29,8 @@
 #include "mp4mux.h"
 #include "vencode.h"
 #include "capture.h"
-//#include "muxmkv.h"
+#include "mx6H264MediaSubsession.hpp"
+#include "mx6H264Source.hpp"
 
 int vrecord_dbg_level = 0;
 int debug_fd;
@@ -411,11 +415,47 @@ err:
 }
 
 
+void * livevideo_thread(void *pt)
+{
+    char livename[32];
+    char comment[64];
+    struct record_obj *obj = (struct record_obj *)pt;
+    UsageEnvironment* env;
+    mx6H264Source* videoSource = NULL;
+    //RTPSink* videoSink;
+    TaskScheduler *scheduler = BasicTaskScheduler::createNew();
+    
+    env = BasicUsageEnvironment::createNew(*scheduler);
+    RTSPServer *rtspServer = RTSPServer::createNew(*env, 8554);
+    if (!rtspServer) {
+        fprintf(stderr, "ERR: create RTSPServer err\n");
+        ::exit(-1);
+    }
+
+    sprintf(livename, "camera%d", obj->channel);
+    sprintf(comment, "Session from /dev/video%d", obj->channel);
+   
+    /* add live stream */ 
+    do {
+        ServerMediaSession *sms = ServerMediaSession::createNew(*env, livename, 0, comment);
+        sms->addSubsession(mx6H264MediaSubsession::createNew(*env, videoSource));
+        rtspServer->addServerMediaSession(sms);
+
+        char *url = rtspServer->rtspURL(sms);
+        *env << "using url \"" << url << "\"\n";
+        delete [] url;
+    } while (0);
+
+    // run loop  
+    env->taskScheduler().doEventLoop();
+}
+
 int main(int argc,char ** argv)
 {
     int ret;
     int channel;
     pthread_t tpid;
+    pthread_t lpid;
     pthread_attr_t pattr;
     struct vc_config * vcconfig;
     struct record_obj obj;
@@ -466,11 +506,12 @@ int main(int argc,char ** argv)
     pthread_attr_init(&pattr);  
     pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_JOINABLE); 
     pthread_create(&tpid, &pattr, record_thread, (void*)&obj);
+    pthread_create(&lpid, &pattr, livevideo_thread, (void*)&obj);
 
     pthread_join(tpid,NULL);
 
     info_msg("Job finish\n");
-    sleep(1);
+    //sleep(1);
     return EXIT_SUCCESS;
 }
 
