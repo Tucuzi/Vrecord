@@ -24,7 +24,7 @@
 #include "parse.h"
 #include "utils.h"
 #include "mp4mux.h"
-#include "vencode.hpp"
+#include "vencode.h"
 #include "capture.h"
 //#include "muxmkv.h"
 
@@ -209,7 +209,7 @@ void * record_thread(void *pt)
         //return VR_INITIPU_ERR;
     }
 
-    #if 0
+    #if 1
     err = vpu_GetVersionInfo(&ver);
     if (err) {
         err_msg("Cannot get version info, err:%d\n", err);

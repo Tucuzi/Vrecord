@@ -1,8 +1,8 @@
 APP=vrecord
 APP2=vrmanager
 
-OBJECT= vrecord.o vencode.o
-COBJECT= fb.o utils.o parse.o mp4mux.o capture.o 
+OBJECT= vrecord.o 
+COBJECT= fb.o utils.o parse.o mp4mux.o capture.o vencode.o
 COMMON_OBJECT=parse.o utils.o
 OBJECT2=vrmanager.o 
 
