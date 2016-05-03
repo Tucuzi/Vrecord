@@ -32,9 +32,10 @@
 #include "mx6H264MediaSubsession.hpp"
 #include "mx6H264Source.hpp"
 
+extern int mpSourceInit;
 int vrecord_dbg_level = 0;
 int debug_fd;
-//struct video_record *Vrecord = NULL;
+struct video_record *Vrecord = NULL;
 
 #define FRAME_NUM 10*25
 
@@ -133,7 +134,7 @@ void config_init(int argc,char ** argv, struct vc_config * config)
     config->height = PHIGH;
     config->enc_width = PWIDTH;
     config->enc_height = PHIGH;    
-    config->format = 2;//h.264
+    config->format = STD_AVC;//h.264
     config->chromaInterleave = 0;
     config->quantParam = 20;
     config->fps = 25; //25 frame per second
@@ -155,7 +156,7 @@ void * record_thread(void *pt)
     vpu_mem_desc    mem_desc = {0};
     vpu_mem_desc scratch_mem_desc = {0};
     struct record_obj *obj = (struct record_obj *)pt;
-    struct video_record *Vrecord = NULL;
+    //struct video_record *Vrecord = NULL;
     
     Vrecord = (struct video_record *)calloc(1, sizeof(struct video_record));
        if (Vrecord == NULL) {
@@ -170,7 +171,6 @@ void * record_thread(void *pt)
     Vrecord->enc.config = obj->config;
     Vrecord->enc.vptr = Vrecord;
     Vrecord->vdev.channel = obj->channel;
-info_msg("bug trace\n");
 #if 0
     /* check the sub directory */
     ret = check_and_make_subdir(WORK_DIR, SUBDIR, obj->channel);
@@ -235,6 +235,11 @@ info_msg("bug trace\n");
     Vrecord->enc.phy_bsbuf_addr = mem_desc.phy_addr;
     Vrecord->enc.virt_bsbuf_addr = mem_desc.virt_uaddr;
     Vrecord->enc.yuv_buff = Vrecord->idev.outbuf; 
+    Vrecord->enc.outhead = 0;
+    Vrecord->enc.outtail = 0;
+    Vrecord->enc.syncflag = 0;
+    Vrecord->enc.output = (struct data_buff*)malloc(32*sizeof(struct data_buff));
+   
 
     if (obj->config->mapType) {
         Vrecord->enc.linear2TiledEnable = 1;
@@ -314,12 +319,10 @@ again:
         }
     }
 
-info_msg("bug trace2\n");
     /* setting the Camera device */
     v4l_capture_setup(Vrecord);
     v4l_start_capturing(Vrecord);
 
-info_msg("bug trace3\n");
     /* check the sub directory */
     ret = check_and_make_subdir(Vrecord->config->fpath, SUBDIR, obj->channel);
     if (ret)
@@ -333,7 +336,6 @@ info_msg("bug trace3\n");
         goto finish;
 #endif
 
-info_msg("bug trace, video num is : %d\n",Vrecord->config->video_num);
     while(cnt++ < Vrecord->config->video_num || Vrecord->config->video_num == -1) {
         vfile_name = get_the_filename(vfile_path);
         info_msg("Create %s\n", vfile_name);
@@ -364,6 +366,12 @@ info_msg("bug trace, video num is : %d\n",Vrecord->config->video_num);
         for (i = 0; i < Vrecord->config->video_dru * 25; i++)
         {
             convert_save_frame(Vrecord);
+#if 1
+            if (mpSourceInit) {
+                mpSourceInit = 0;
+                break;
+            }
+#endif
         }
 
         info_msg("Saved frame %d\n", i);
@@ -418,7 +426,7 @@ err:
     pthread_exit(NULL); 
 }
 
-#if 0
+#if 1
 void * livevideo_thread(void *pt)
 {
     char livename[32];
@@ -454,6 +462,7 @@ void * livevideo_thread(void *pt)
 
     // run loop  
     env->taskScheduler().doEventLoop();
+    info_msg("Rstp server shut down\n");
 }
 #endif 
 
@@ -487,13 +496,6 @@ int main(int argc,char ** argv)
     }
     else
         info_msg("start recording the Camera%d\n", channel);
- 
-#if 0  
-    if (channel == 0) {
-        printf("Skip the camer0, because it is not good.\n");
-        return EXIT_SUCCESS;
-    }
-#endif 
 
     vcconfig = (struct vc_config *)calloc(1, sizeof(struct vc_config));
     if (vcconfig == NULL) {
@@ -507,7 +509,7 @@ int main(int argc,char ** argv)
     vcconfig->video_num = atoi(search_parmeter_value(list, VIDEO_NUM));
     vcconfig->fpath = search_parmeter_value(list, SAVE_PATH);
 
-#if 0
+#if 1
     /* check the work directory */
     ret = check_and_make_workdir(vcconfig->fpath);
     if (ret)
@@ -521,10 +523,10 @@ int main(int argc,char ** argv)
     pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_JOINABLE); 
     pthread_create(&tpid, &pattr, record_thread, (void*)&obj);
     sleep(1);
-    //pthread_create(&lpid, &pattr, livevideo_thread, (void*)&obj);
+    pthread_create(&lpid, &pattr, livevideo_thread, (void*)&obj);
 
     pthread_join(tpid,NULL);
-    //pthread_cancel(lpid);
+    pthread_cancel(lpid);
 
     info_msg("Job finish\n");
     //sleep(1);

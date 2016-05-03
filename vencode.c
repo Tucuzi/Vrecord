@@ -32,6 +32,7 @@ extern struct capture_testbuffer cap_buffers[];
 /* When app need to exit */
 extern int quitflag;
 static int issyncframe;
+extern int mVdataSyncFlag;
 
 void jpgGetHuffTable(EncMjpgParam *param)
 {
@@ -73,9 +74,23 @@ enc_readbs_reset_buffer(struct encode *enc, PhysicalAddress paBsBufAddr, int bsB
     struct video_record *vrecord = (struct video_record *)enc->vptr;
     
     vbuf = enc->virt_bsbuf_addr + paBsBufAddr - enc->phy_bsbuf_addr;
-    vrecord->enc.output_ptr = (char*)vbuf;
-    vrecord->enc.outlen = bsBufsize;
-
+    
+    if (mVdataSyncFlag)
+    {
+    enc->output[enc->outhead].len = bsBufsize;
+    memcpy(enc->output[enc->outhead++].data, vbuf, bsBufsize);
+  
+    if(enc->outhead == MAX_BUF_NUM)
+        enc->outhead = 0;
+#if 0    
+    if (enc->outhead == enc->outtail) {
+        printf("queue overflaw\n");
+        enc->outhead = enc->outtail+1;
+        if(enc->outhead == MAX_BUF_NUM)
+            enc->outhead = 0;
+    }
+#endif
+    }
     return vrecord->saveframe(vrecord, (char *)vbuf, bsBufsize, issyncframe);
     //return vpu_write(enc->config, (void *)vbuf, bsBufsize);
 }
@@ -537,8 +552,7 @@ encoder_setup(struct encode *enc)
             return -1;
         }
     }
-    
-    /* Set report info flag */
+        /* Set report info flag */
     if (enc->mbInfo.enable) {
         ret = vpu_EncGiveCommand(handle, ENC_SET_REPORT_MBINFO, &enc->mbInfo);
         if (ret != RETCODE_SUCCESS) {
@@ -618,14 +632,23 @@ encoder_start(struct encode *enc)
 
     /* Must put encode header before each frame encoding for mx6 MJPG */
     if (cpu_is_mx6x() && (enc->config->format == STD_MJPG)) {
-        info_msg("fill header\n");
+        //info_msg("fill header\n");
         ret = encoder_fill_headers(enc);
         if (ret) {
             err_msg("Encode fill headers failed\n");
             goto err2;
         }
     }
-
+#if 1
+    else {
+        //info_msg("fill header\n");
+        ret = encoder_fill_headers(enc);
+        if (ret) {
+            err_msg("Encode fill headers failed\n");
+            goto err2;
+        }
+    }
+#endif
 //        gettimeofday(&tenc_begin, NULL);
     ret = vpu_EncStartOneFrame(handle, &enc_param);
     if (ret != RETCODE_SUCCESS) {

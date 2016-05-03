@@ -25,11 +25,12 @@ protected:
     virtual FramedSource *createNewStreamSource (unsigned sid, unsigned &bitrate);  
 
 private:  
-    FramedSource *mp_source;    // \u5bf9\u5e94 WebcamFrameSource  
-    char *mp_sdp_line;
-    void *mp_ptr;  
-    RTPSink *mp_dummy_rtpsink;  
-    char m_done;  
+    FramedSource *mpSource;    // \u5bf9\u5e94 WebcamFrameSource  
+    char *mpSdpLine;
+    void *mpPtr;  
+    RTPSink *mpDummyRtpsink;  
+    char mpDone; 
+//    int mpConnect; 
 };  
  
 #endif

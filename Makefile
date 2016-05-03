@@ -1,7 +1,7 @@
 APP=vrecord
 APP2=vrmanager
 
-OBJECT= vrecord.o  mx6H264Source.o mx6H264MediaSubsession.o
+OBJECT= vrecord.o mx6H264Source.o mx6H264MediaSubsession.o
 COBJECT= fb.o utils.o parse.o mp4mux.o capture.o vencode.o
 COMMON_OBJECT=parse.o utils.o
 OBJECT2=vrmanager.o 

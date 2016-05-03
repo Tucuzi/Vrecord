@@ -234,6 +234,12 @@ struct vc_config {
     char *fpath;
 };
 
+struct data_buff
+{
+    char data[102400];
+    int  len;
+};
+
 struct encode {
     EncHandle handle;        /* Encoder handle */
     PhysicalAddress phy_bsbuf_addr; /* Physical bitstream buffer */
@@ -255,8 +261,10 @@ struct encode {
     int linear2TiledEnable;
     int minFrameBufferCount;
     int avc_vui_present_flag;
-    char *output_ptr; /* the pointer to the encoder output buffer */
-    int outlen;   
+    struct data_buff *output; /* the pointer to the encoder output buffer */
+    int outhead;
+    int outtail;
+    int syncflag;
 
     EncReportInfo mbInfo;
     EncReportInfo mvInfo;

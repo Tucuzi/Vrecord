@@ -1,12 +1,14 @@
 #ifndef _MX6H264SOURCE_H_
 #define _MX6H264SOURCE_H_
 
+#include "H264or5VideoStreamFramer.hh"
 #ifndef _FRAMED_SOURCE_HH
 #include "FramedSource.hh"
 #endif
 
 // The following class can be used to define specific encoder parameters
 
+//class mx6H264Source: public H264or5VideoStreamFramer{
 class mx6H264Source: public FramedSource {
 public:
     static mx6H264Source* createNew(UsageEnvironment& env, void* ptr);
@@ -25,9 +27,10 @@ private:
     // redefined virtual functions:
     virtual void doGetNextFrame();
     virtual unsigned maxFrameSize() const;
+    //virtual Boolean isH264VideoStreamFramer() const;
     static void getNextFrame (void *ptr);
     void getNextFrame1 ();
-    //virtual void doStopGettingFrames(); // optional
+    virtual void doStopGettingFrames(); // optional
 
 private:
     static void deliverFrame0(void* clientData);
@@ -35,9 +38,9 @@ private:
 
 private:
     static unsigned referenceCount; // used to count how many instances of this class currently exist
-    int m_started;  
-    void *mp_token;
-    void *mp_ptr;
+    int mpDisconnect;
+    void *mpPtr;
+    int mStep;
 };
 
 #endif
