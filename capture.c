@@ -54,7 +54,8 @@ int v4l_capture_setup(struct video_record *vrecord)
     struct v4l2_capability cap;
 
     sprintf(video_dev, "%s%d", VIDEO_DEVICE, vrecord->vdev.channel);
-    vrecord->vdev.vfd = open(video_dev, O_RDWR | O_NONBLOCK, 0);
+    //vrecord->vdev.vfd = open(video_dev, O_RDWR | O_NONBLOCK, 0);
+    vrecord->vdev.vfd = open(video_dev, O_RDWR, 0);
 
     if (vrecord->vdev.vfd <0) {
         err_msg("Open %s fail!\n", video_dev);
@@ -142,7 +143,7 @@ int v4l_get_capture_data(struct video_record *vrecord, u8 *dbuf)
     /* Timeout. */
     tv.tv_sec = 2;
     tv.tv_usec = 0;
-
+#if 0
     r = select(vrecord->vdev.vfd + 1, &fds, NULL, NULL, &tv);
 
     if (-1 == r) {
@@ -156,7 +157,7 @@ int v4l_get_capture_data(struct video_record *vrecord, u8 *dbuf)
         err_msg ("select timeout\n");
         exit (EXIT_FAILURE);
     }
-
+#endif
     CLEAR (buf);
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;

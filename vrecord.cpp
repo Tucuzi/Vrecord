@@ -35,7 +35,12 @@
 extern int mpSourceInit;
 int vrecord_dbg_level = 0;
 int debug_fd;
+int vFinish = 0;
 struct video_record *Vrecord = NULL;
+pthread_mutex_t Pmutex;
+pthread_mutex_t Fmutex;
+pthread_cond_t  Pcond;
+pthread_cond_t  Fcond;
 
 #define FRAME_NUM 10*25
 
@@ -111,12 +116,13 @@ static int convert_save_frame(struct video_record *vrecord)
 
     ret = v4l_get_capture_data(vrecord, (u8*)vrecord->idev.inbuf);
     //write(debug_fd, vrecord->idev.inbuf, ret);
-    #if 1
+    pthread_cond_signal(&Pcond);
+    #if 0
     ret = ioctl(vrecord->idev.ifd, IPU_QUEUE_TASK, vrecord->idev.t);
     if (ret < 0) {
         err_msg("ioct IPU_QUEUE_TASK fail\n");
     }
-    else {
+    else {   
         vrecord->enc.yuv_buff = vrecord->idev.outbuf;
         encoder_start(&vrecord->enc);
         //write(debug_fd, vrecord->idev.outbuf,  PWIDTH * PHIGH * 3 / 2); 
@@ -166,6 +172,7 @@ void * record_thread(void *pt)
         return NULL;
     }
 
+
     Vrecord->saveframe = mp4_save_frame;
     Vrecord->config = obj->config;
     Vrecord->enc.config = obj->config;
@@ -187,6 +194,9 @@ void * record_thread(void *pt)
     vfile_name = get_the_filename(vfile_path);
     mp4mux_init(Vrecord, vfile_name);
 #endif
+    
+    /* */
+    pthread_cond_signal(&Pcond);
 
     Vrecord->idev.ifd = open(IMG_DEVICE, O_RDWR, 0);
     if (Vrecord->idev.ifd < 0)  {
@@ -373,7 +383,11 @@ again:
             }
 #endif
         }
-
+        
+        vFinish = 1;
+        pthread_mutex_lock(&Fmutex);
+        pthread_cond_wait(&Fcond,&Fmutex);
+        pthread_mutex_unlock(&Fmutex);
         info_msg("Saved frame %d\n", i);
 #if 0
         close(debug_fd);
@@ -426,6 +440,40 @@ err:
     pthread_exit(NULL); 
 }
 
+void * vencode_thread(void *pt)
+{
+    int ret;
+    struct video_record * vrecord;
+
+    pthread_mutex_lock(&Pmutex);
+    pthread_cond_wait(&Pcond,&Pmutex);
+    pthread_mutex_unlock(&Pmutex);
+    vrecord = Vrecord;
+
+    info_msg("vreord thread init finish.\n");
+    while(1) {
+        pthread_mutex_lock(&Pmutex);
+        pthread_cond_wait(&Pcond,&Pmutex);
+        pthread_mutex_unlock(&Pmutex);
+        ret = ioctl(vrecord->idev.ifd, IPU_QUEUE_TASK, vrecord->idev.t);
+        if (ret < 0) {
+            err_msg("ioct IPU_QUEUE_TASK fail\n");
+        }
+        else {   
+            vrecord->enc.yuv_buff = vrecord->idev.outbuf;
+            encoder_start(&vrecord->enc);
+        }
+        
+        if (vFinish) {
+            pthread_cond_signal(&Fcond);
+            vFinish = 0;
+        }
+        //info_msg("encode pic\n");
+    }
+
+    pthread_exit(NULL);
+}
+
 #if 1
 void * livevideo_thread(void *pt)
 {
@@ -471,6 +519,7 @@ int main(int argc,char ** argv)
     int ret;
     int channel;
     pthread_t tpid;
+    pthread_t vpid;
     pthread_t lpid;
     pthread_attr_t pattr;
     struct vc_config * vcconfig;
@@ -518,10 +567,15 @@ int main(int argc,char ** argv)
 
     obj.channel = channel;
     obj.config = vcconfig;
+    pthread_mutex_init(&Pmutex,NULL);
+    pthread_mutex_init(&Fmutex,NULL);
+    pthread_cond_init(&Pcond,NULL);
+    pthread_cond_init(&Fcond,NULL);
 
     pthread_attr_init(&pattr);  
     pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_JOINABLE); 
     pthread_create(&tpid, &pattr, record_thread, (void*)&obj);
+    pthread_create(&vpid, &pattr, vencode_thread, (void*)&obj);
     sleep(1);
     pthread_create(&lpid, &pattr, livevideo_thread, (void*)&obj);
 
