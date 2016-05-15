@@ -139,8 +139,10 @@ void mx6H264Source::deliverFrame()
     afterGetting(this);   
 }  
 
+#if 1
 unsigned mx6H264Source::maxFrameSize() const
 {
-    return 100*1024;
+    return 140*1024;
 }
+#endif
 

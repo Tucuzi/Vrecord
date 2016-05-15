@@ -144,7 +144,7 @@ struct frame_buf {
 
 struct v4l_buf {
     void *start;
-    off_t offset;
+    size_t offset;
     size_t length;
 };
 
@@ -298,8 +298,9 @@ struct mux_object_s
 typedef struct mux_object_s mux_object_t;
 #endif
 struct buffer {
-        void* start;
-        size_t length;
+    void* start;
+    size_t length;
+    size_t offset;
 };
 
 struct ipu_device
@@ -314,6 +315,7 @@ struct video_device
 {
     int channel;
     int vfd;
+    int index;
 
     struct buffer* buffers;
     unsigned int n_buffers;

@@ -10,7 +10,7 @@ LIVE555_DIR=/home/neero/project/3g-vedio-cam/opensource/live555/out/usr/local
 LIVE555_LIB=-L${LIVE555_DIR}/lib -lliveMedia -lgroupsock -lBasicUsageEnvironment -lUsageEnvironment
 LIVE555_HEADER=-I${LIVE555_DIR}/include/BasicUsageEnvironment -I${LIVE555_DIR}/include/groupsock -I${LIVE555_DIR}/include/liveMedia -I${LIVE555_DIR}/include/UsageEnvironment
 
-CFLAGS=-Wall -O2
+CFLAGS=-Wall -O3
 #CFLAGS=-O2
 HEADER=${LIVE555_HEADER}
 LDFLAGS=-lvpu -lmp4v2 -lpthread ${LIVE555_LIB}

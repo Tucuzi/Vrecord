@@ -285,12 +285,15 @@ void * record_thread(void *pt)
     Vrecord->idev.t =  (struct ipu_task*) malloc(sizeof(struct ipu_task));
     memset(Vrecord->idev.t, 0, sizeof(struct ipu_task));
     config_ipu_task(Vrecord->idev.t);
+
+#if 0
     isize = Vrecord->idev.t->input.paddr =
             Vrecord->idev.t->input.width * Vrecord->idev.t->input.height
             * fmt_to_bpp(Vrecord->idev.t->input.format)/8;
     
     ret = ioctl(Vrecord->idev.ifd, IPU_ALLOC, &Vrecord->idev.t->input.paddr);
     Vrecord->idev.inbuf = mmap(0, isize, PROT_READ | PROT_WRITE,
+        //MAP_PRIVATE, Vrecord->idev.ifd, Vrecord->idev.t->input.paddr);
         MAP_SHARED, Vrecord->idev.ifd, Vrecord->idev.t->input.paddr);
 
     osize = Vrecord->idev.t->output.paddr =
@@ -299,6 +302,7 @@ void * record_thread(void *pt)
     
     ret = ioctl(Vrecord->idev.ifd, IPU_ALLOC, &Vrecord->idev.t->output.paddr);
     Vrecord->idev.outbuf = mmap(0, osize, PROT_READ | PROT_WRITE,
+        //MAP_PRIVATE, Vrecord->idev.ifd, Vrecord->idev.t->output.paddr);
         MAP_SHARED, Vrecord->idev.ifd, Vrecord->idev.t->output.paddr);
 
 again:
@@ -328,10 +332,49 @@ again:
             return NULL;
         }
     }
+#endif
 
     /* setting the Camera device */
     v4l_capture_setup(Vrecord);
     v4l_start_capturing(Vrecord);
+
+    osize = Vrecord->idev.t->output.paddr =
+        Vrecord->idev.t->output.width * Vrecord->idev.t->output.height
+        * fmt_to_bpp(Vrecord->idev.t->output.format)/8;
+    
+    ret = ioctl(Vrecord->idev.ifd, IPU_ALLOC, &Vrecord->idev.t->output.paddr);
+    Vrecord->idev.outbuf = mmap(0, osize, PROT_READ | PROT_WRITE,
+        MAP_SHARED, Vrecord->idev.ifd, Vrecord->idev.t->output.paddr);
+   
+    Vrecord->idev.t->input.paddr = Vrecord->vdev.buffers[0].offset;
+again:
+    ret = ioctl(Vrecord->idev.ifd, IPU_CHECK_TASK, Vrecord->idev.t);
+    if (ret != IPU_CHECK_OK) {
+        if (ret > IPU_CHECK_ERR_MIN) {
+            if (ret == IPU_CHECK_ERR_SPLIT_INPUTW_OVER) {
+                Vrecord->idev.t->input.crop.w -= 8;
+                goto again;
+            }
+            if (ret == IPU_CHECK_ERR_SPLIT_INPUTH_OVER) {
+                Vrecord->idev.t->input.crop.h -= 8;
+                goto again;
+            }
+            if (ret == IPU_CHECK_ERR_SPLIT_OUTPUTW_OVER) {
+                Vrecord->idev.t->output.crop.w -= 8;
+                goto again;
+            }
+            if (ret == IPU_CHECK_ERR_SPLIT_OUTPUTH_OVER) {
+                Vrecord->idev.t->output.crop.h -= 8;
+                goto again;
+            }
+
+            ret = 0;
+            err_msg("ipu task check fail\n");
+            //return -1;
+            return NULL;
+        }
+    }
+
 
     /* check the sub directory */
     ret = check_and_make_subdir(Vrecord->config->fpath, SUBDIR, obj->channel);
@@ -455,6 +498,9 @@ void * vencode_thread(void *pt)
         pthread_mutex_lock(&Pmutex);
         pthread_cond_wait(&Pcond,&Pmutex);
         pthread_mutex_unlock(&Pmutex);
+        //info_msg("the index is %d, bufsize is %d\n",vrecord->vdev.index, vrecord->vdev.buffers[vrecord->vdev.index].length);
+        //memcpy(vrecord->idev.inbuf, vrecord->vdev.buffers[vrecord->vdev.index].start, vrecord->vdev.buffers[vrecord->vdev.index].length);
+        vrecord->idev.t->input.paddr = vrecord->vdev.buffers[vrecord->vdev.index].offset;
         ret = ioctl(vrecord->idev.ifd, IPU_QUEUE_TASK, vrecord->idev.t);
         if (ret < 0) {
             err_msg("ioct IPU_QUEUE_TASK fail\n");
@@ -477,17 +523,29 @@ void * vencode_thread(void *pt)
 #if 1
 void * livevideo_thread(void *pt)
 {
+    char trytime = 10;
     char livename[32];
     char comment[64];
     struct record_obj *obj = (struct record_obj *)pt;
     UsageEnvironment* env;
     mx6H264Source* videoSource = NULL;
     //RTPSink* videoSink;
+    RTSPServer *rtspServer;
     TaskScheduler *scheduler = BasicTaskScheduler::createNew();
     
     env = BasicUsageEnvironment::createNew(*scheduler);
-    RTSPServer *rtspServer = RTSPServer::createNew(*env, 8554+obj->channel);
-    if (!rtspServer) {
+
+    while (trytime--) {
+        rtspServer = RTSPServer::createNew(*env, 8554+obj->channel);
+        if (rtspServer)
+            break;
+        else {
+            info_msg("Try to create RTSPServer.\n");
+            sleep(2);
+        }
+    }
+
+    if (trytime <= 0) {
         fprintf(stderr, "ERR: create RTSPServer err\n");
         ::exit(-1);
     }

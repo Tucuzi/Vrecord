@@ -143,6 +143,7 @@ int main(int argc, char* argv[])
     int ret;
     pid_t *ppid;
     pid_t cpid;
+    pid_t dpid;
     pthread_t tpid;
     //pthread_attr_t pattr;
     char args[20];
@@ -171,6 +172,8 @@ int main(int argc, char* argv[])
     if (ret)
         return ret;
 
+    //dpid = fork();
+    //if (dpid == 0) {
     ppid = (pid_t*)calloc(channel, sizeof(pid_t));
     for(i=0;i<channel;i++) {
         cpid = fork();
@@ -182,6 +185,9 @@ int main(int argc, char* argv[])
         else
             ppid[i] = cpid;
     }
+    //}
+    //else
+       //return 0;
 
     threadRun = 1;
     //pthread_attr_init(&pattr);  
