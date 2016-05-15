@@ -1,6 +1,7 @@
 *.o
 vrecord
 vrmanager
+vrmanager-v*
 
 !.gitignore
 

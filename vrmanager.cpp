@@ -14,8 +14,10 @@
 #include "utils.h"
 
 #define CMD "/usr/bin/vrecord"
+#define MAX_CAMERA_NUM 8
 int vrecord_dbg_level = 0;
 int threadRun;
+char nCameraMap[MAX_CAMERA_NUM] ;
 
 struct vrecord_config
 {
@@ -78,7 +80,6 @@ void remove_oldvideo(char *path)
     chdir(pwd);
 }
 
-
 void* monitor_thread(void *ptr)
 {
     char video_dir[256];
@@ -122,7 +123,7 @@ void* monitor_thread(void *ptr)
             //If the free disk is lower than 15%, remove the older files
             if (freedisk_rate < 0.15) {
                 for(i=0; i<config->channel; i++) {
-                    sprintf(video_dir,"%s/%s%d", config->path, SUBDIR, i);
+                    sprintf(video_dir,"%s/%s%d", config->path, SUBDIR, nCameraMap[i]);
                     remove_oldvideo(video_dir);
                 }
             }
@@ -136,7 +137,7 @@ int main(int argc, char* argv[])
 {
     struct parmeter_list *list;
     struct vrecord_config config;
-    int channel;
+    int channel = 0;
     int vduration;
     int vnum;
     int i;
@@ -148,6 +149,8 @@ int main(int argc, char* argv[])
     //pthread_attr_t pattr;
     char args[20];
     char* path;
+    char* mark;
+    char cameraid[32];
 
     list = parse_config_file(CONFIGFILE_PATH);
     if (list == NULL){
@@ -155,12 +158,21 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    channel = atoi(search_parmeter_value(list, DEVICE_CHANNEL));
-    printf("channel number : %d\n", channel);
+   // channel = atoi(search_parmeter_value(list, DEVICE_CHANNEL));
+   // printf("channel number : %d\n", channel);
     path = search_parmeter_value(list, SAVE_PATH);
-    printf("video saved at %s\n", path);
+    info_msg("video saved at %s\n", path);
     vduration = atoi(search_parmeter_value(list, VIDEO_DURATION));
     vnum = atoi(search_parmeter_value(list, VIDEO_NUM));
+
+    /* max camera channel is 8 */
+    for (i=0; i<MAX_CAMERA_NUM; i++) {
+        sprintf(cameraid, "%s%d", CAMERA_PREFIX, i);
+        mark = search_parmeter_value(list, cameraid);
+        if (mark != NULL && (*mark == 'y' || *mark == 'Y')) {
+            nCameraMap[channel++] = i;
+        }
+    }
 
     config.channel = channel;
     config.path = path;
@@ -179,7 +191,7 @@ int main(int argc, char* argv[])
         cpid = fork();
 
         if (cpid == 0) {
-            sprintf(args, "%d", i);
+            sprintf(args, "%d", nCameraMap[i]);
             execl(CMD, CMD, args, NULL);
         }
         else

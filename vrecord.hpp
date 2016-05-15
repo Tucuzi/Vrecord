@@ -9,8 +9,6 @@
 #include <mp4v2/mp4v2.h>
 //#include <uapi/linux/ipu.h>
 
-//#include "libmkv.h"
-
 #define COMMON_INIT
 
 #define PROGRM_CODE     "vrecod"
@@ -99,28 +97,26 @@ typedef char s8;
 /* Configure ID */
 #define CONFIGFILE_PATH "/etc/vrecord.conf"
 
-#define DEVICE_CHANNEL    "channel_num"
-#define SAVE_PATH         "save_path"
-#define VIDEO_DURATION    "video_duration"
-#define VIDEO_NUM         "video_num"
+#define DEVICE_CHANNEL           "channel_num"
+#define SAVE_PATH                "save_path"
+#define VIDEO_DURATION           "video_duration"
+#define VIDEO_NUM                "video_num"
+#define CAMERA_PREFIX            "camera_"
 
 extern int vrecord_dbg_level ;
 
 #define dprintf(level, fmt, arg...)     if (vrecord_dbg_level >= level) \
         printf("[DEBUG]\t%s:%d " fmt, __FILE__, __LINE__, ## arg)
 
-#define err_msg(fmt, arg...) do { if (vrecord_dbg_level >= 1)        \
-    printf("[ERR]\t%s:%d " fmt,  __FILE__, __LINE__, ## arg); else \
+#define err_msg(fmt, arg...) do { if (vrecord_dbg_level >= 0)        \
     printf("[ERR]\t" fmt, ## arg);    \
     } while (0)
     
-#define info_msg(fmt, arg...) do { if (vrecord_dbg_level >= 1)        \
-    printf("[INFO]\t%s:%d " fmt,  __FILE__, __LINE__, ## arg); else \
+#define info_msg(fmt, arg...) do { if (vrecord_dbg_level >= 2)        \
     printf("[INFO]\t" fmt, ## arg);    \
     } while (0)
     
 #define warn_msg(fmt, arg...) do { if (vrecord_dbg_level >= 1)        \
-    printf("[WARN]\t%s:%d " fmt,  __FILE__, __LINE__, ## arg); else \
     printf("[WARN]\t" fmt, ## arg);    \
     } while (0)
 

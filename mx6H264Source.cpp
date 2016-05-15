@@ -77,7 +77,7 @@ void mx6H264Source::deliverFrame()
 
     
     if (vp->enc.outtail == vp->enc.outhead) {
-        printf("overflaw\n");
+        //printf("overflaw\n");
         usleep(1000*1000/25);
     }
 

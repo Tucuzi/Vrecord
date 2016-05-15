@@ -102,11 +102,18 @@ void config_ipu_task(struct ipu_task *task)
     //config the inout video data
     task->input.width = PWIDTH;
     task->input.height = PHIGH;
-    task->input.format =  IPU_PIX_FMT_RGB565;
+    task->input.crop.w = PWIDTH;
+    task->input.crop.h = PHIGH;
     
+    task->input.format =  IPU_PIX_FMT_RGB565;
+    task->input.deinterlace.enable = 1;
+    task->input.deinterlace.motion = 2;
     //config the output video data
     task->output.width = PWIDTH;
     task->output.height = PHIGH;
+    task->output.crop.w = PWIDTH;
+    task->output.crop.h = PHIGH;
+    
     task->output.format = IPU_PIX_FMT_YUV420P;
 }
 
@@ -431,7 +438,7 @@ again:
         pthread_mutex_lock(&Fmutex);
         pthread_cond_wait(&Fcond,&Fmutex);
         pthread_mutex_unlock(&Fmutex);
-        info_msg("Saved frame %d\n", i);
+        //info_msg("Saved frame %d\n", i);
 #if 0
         close(debug_fd);
 #else
@@ -493,7 +500,6 @@ void * vencode_thread(void *pt)
     pthread_mutex_unlock(&Pmutex);
     vrecord = Vrecord;
 
-    info_msg("vreord thread init finish.\n");
     while(1) {
         pthread_mutex_lock(&Pmutex);
         pthread_cond_wait(&Pcond,&Pmutex);
@@ -531,10 +537,9 @@ void * livevideo_thread(void *pt)
     mx6H264Source* videoSource = NULL;
     //RTPSink* videoSink;
     RTSPServer *rtspServer;
-    TaskScheduler *scheduler = BasicTaskScheduler::createNew();
     
+    TaskScheduler *scheduler = BasicTaskScheduler::createNew();
     env = BasicUsageEnvironment::createNew(*scheduler);
-
     while (trytime--) {
         rtspServer = RTSPServer::createNew(*env, 8554+obj->channel);
         if (rtspServer)
@@ -554,7 +559,6 @@ void * livevideo_thread(void *pt)
     sprintf(comment, "Session from /dev/video%d", obj->channel);
    
     //sleep(1);
-    info_msg("start rstp server\n");
     /* add live stream */ 
     do {
         ServerMediaSession *sms = ServerMediaSession::createNew(*env, livename, 0, comment);
@@ -566,7 +570,7 @@ void * livevideo_thread(void *pt)
         delete [] url;
     } while (0);
 
-    // run loop  
+    /* run loop */ 
     env->taskScheduler().doEventLoop();
     info_msg("Rstp server shut down\n");
 }
@@ -640,7 +644,6 @@ int main(int argc,char ** argv)
     pthread_join(tpid,NULL);
     pthread_cancel(lpid);
 
-    info_msg("Job finish\n");
     //sleep(1);
     return EXIT_SUCCESS;
 }
