@@ -24,6 +24,13 @@
 *.lib
 
 # Executables
-*.exe
 *.out
 *.app
+vrecord
+vrmanager
+vrmanager-v*
+
+!.gitignore
+
+/tgas
+/TAGS
